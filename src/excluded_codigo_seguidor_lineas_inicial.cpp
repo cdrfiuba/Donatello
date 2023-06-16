@@ -1,3 +1,4 @@
+#include <Arduino.h>
 // Seguidor de linea blanca con sensor TCRT5000
  
 const int AIA = A0;
