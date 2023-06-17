@@ -1,4 +1,5 @@
 #include <Arduino.h>
+
 // Seguidor de linea blanca con sensor TCRT5000
  
 const int AIA = A0;
@@ -22,42 +23,6 @@ float multiplicador_izq = 1; // multiplica la velocidad de la rueda iquierda
 float paso_multiplicador = 0.05; // paso con el que se van variando los multiplicadores en cada iteración
 
 int velocidad_max = 150; //puede variar entre 0 y 255
-
-
-void setup() {
-  pinMode(AIA, OUTPUT);
-  pinMode(AIB, OUTPUT);
-  pinMode(BIA, OUTPUT);
-  pinMode(BIB, OUTPUT);
-  
-  pinMode(infr_izq_2, INPUT);
-  pinMode(infr_izq_1, INPUT);
-  pinMode(infr_centro, INPUT);
-  pinMode(infr_der_1, INPUT);
-  pinMode(infr_der_2, INPUT);
-
-  pinMode(pulsador, INPUT);
-
-  while(digitalRead(pulsador)); //Espera a que se accione el pulsador para comenzar a correr el código
-}
- 
-void loop() {
-
-  if(digitalRead(infr_izq_2) == blanco) doblar_iquierda(2 * paso_multiplicador);
-  if(digitalRead(infr_izq_1) == blanco) doblar_iquierda(paso_multiplicador);
-  if(digitalRead(infr_centro) == blanco) centrar();
-  if(digitalRead(infr_der_1) == blanco) doblar_derecha(paso_multiplicador);
-  if(digitalRead(infr_der_2) == blanco) doblar_derecha(2 * paso_multiplicador);
-  
-  analogWrite(AIA, 0);
-  analogWrite(AIB, velocidad_max * multiplicador_der);
-  analogWrite(BIA, 0);
-  analogWrite(BIB, velocidad_max * multiplicador_izq);
-
-  //delay(50);
-}
-
-
 
 void centrar(){ //Reestablece los multiplicadores para que avance recto
   multiplicador_der = 1;
@@ -100,4 +65,37 @@ void doblar_derecha(float val){ //recibe un valor entre 0 y 1 que modifica el mu
   else if(multiplicador_izq == 1 && multiplicador_der - val < 0){
     multiplicador_der = 0;
   }
+}
+
+void setup() {
+  pinMode(AIA, OUTPUT);
+  pinMode(AIB, OUTPUT);
+  pinMode(BIA, OUTPUT);
+  pinMode(BIB, OUTPUT);
+  
+  pinMode(infr_izq_2, INPUT);
+  pinMode(infr_izq_1, INPUT);
+  pinMode(infr_centro, INPUT);
+  pinMode(infr_der_1, INPUT);
+  pinMode(infr_der_2, INPUT);
+
+  pinMode(pulsador, INPUT);
+
+  while(digitalRead(pulsador)); //Espera a que se accione el pulsador para comenzar a correr el código
+}
+ 
+void loop() {
+
+  if(digitalRead(infr_izq_2) == blanco) doblar_iquierda(2 * paso_multiplicador);
+  if(digitalRead(infr_izq_1) == blanco) doblar_iquierda(paso_multiplicador);
+  if(digitalRead(infr_centro) == blanco) centrar();
+  if(digitalRead(infr_der_1) == blanco) doblar_derecha(paso_multiplicador);
+  if(digitalRead(infr_der_2) == blanco) doblar_derecha(2 * paso_multiplicador);
+  
+  analogWrite(AIA, 0);
+  analogWrite(AIB, velocidad_max * multiplicador_der);
+  analogWrite(BIA, 0);
+  analogWrite(BIB, velocidad_max * multiplicador_izq);
+
+  //delay(50);
 }
