@@ -10,9 +10,9 @@
 #define BIB A3
 
 // Infrarrojos
-#define PIN_SENSOR_IZQUIERDO    10
-#define PIN_SENSOR_CENTRO       11
-#define PIN_SENSOR_DERECHO      12
+#define PIN_SENSOR_IZQUIERDO    9
+#define PIN_SENSOR_CENTRO       10
+#define PIN_SENSOR_DERECHO      11
 #define PIN_SENSORS_MASK        0b00011100
 #define PIN_SENSORS_SHIFT       2
 
@@ -23,7 +23,7 @@
 
 #define BOTON_ENCENDIDO 7
 
-constexpr int8_t sensors_to_error[] = {
+constexpr float sensors_to_error[] = {
     UNDEFINED,  // ---
     +2,         // --*
      0,         // -*-
@@ -34,27 +34,31 @@ constexpr int8_t sensors_to_error[] = {
     UNDEFINED   // ***
 };
 
-constexpr uint8_t kVelMaxIzq = 150;
-constexpr uint8_t kVelMaxDer = 180;
-constexpr uint8_t kP = 5;
+constexpr uint8_t kVelMaxIzq = 180;
+constexpr uint8_t kVelMaxDer = 210;
+constexpr float kP = 28;
+constexpr float kD = 1000;
 
 struct ProgramData {
-    State current_state = State::init;
+    // State current_state = State::init;
     unsigned long t0;
     unsigned long dt;
     uint8_t velDer = kVelMaxDer;
     uint8_t velIzq = kVelMaxIzq;
+    float error_d = 0;
+    float last_error = 0;
+    float error = 0;
 };
 ProgramData s{};
 
 
-STATE(init) {
+/*STATE(init) {
     if (digitalRead(BOTON_ENCENDIDO)) {
         s.current_state = State::follow_line;
     }
-}
+} */
 
-STATE(follow_line) {
+/*STATE(follow_line) {
     int16_t error = sensors_to_error[READ_SENSORS()];
     
     // Better safe than sorry
@@ -62,8 +66,21 @@ STATE(follow_line) {
         return;
     }
 
-    s.velDer = min(kVelMaxDer + error * kP, 255);
-    s.velIzq = min(kVelMaxIzq - error * kP, 255);
+    float kd = (error - s.last_error) / s.dt;
+}*/
+
+void d_controller(){
+    s.error_d = (s.error - s.last_error) / (float) s.dt;
+    s.last_error = s.error_d;
+}
+
+void p_controller() {
+    float tmp = sensors_to_error[READ_SENSORS()];
+    if (tmp == UNDEFINED) {
+        return;
+    }
+
+    s.error = tmp;
 }
 
 void setup() {
@@ -79,13 +96,26 @@ void setup() {
     Serial.begin(9600);
 
     pinMode(BOTON_ENCENDIDO, INPUT);
+    s.t0 = millis();
 }
  
 void loop() {
-    EXEC_STATE(s.current_state);
+/*
+    p_controller();
+ 
+    if ((s.dt = millis() - s.t0) >= 15) {
+        s.t0 = millis();
+        Serial.println(s.dt);
+        d_controller();
+        
+    }
 
+    s.velDer = min(kVelMaxDer + s.error * kP + kD * s.error_d, 255);
+    s.velIzq = min(kVelMaxIzq - s.error * kP - kD * s.error_d, 255);*/
+    
     analogWrite(AIA, 0);
-    analogWrite(AIB, s.velDer);
+    analogWrite(AIB, kVelMaxDer);
     analogWrite(BIA, 0);
-    analogWrite(BIB, s.velIzq);
+    analogWrite(BIB, kVelMaxIzq);
+
 }
