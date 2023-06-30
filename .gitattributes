@@ -1,0 +1,5 @@
+placa/placa-cache.lib filter=lfs diff=lfs merge=lfs -text
+placa/placa.kicad_pcb filter=lfs diff=lfs merge=lfs -text
+placa/placa.pro filter=lfs diff=lfs merge=lfs -text
+placa/placa.sch filter=lfs diff=lfs merge=lfs -text
+placa/placa.sch-bak filter=lfs diff=lfs merge=lfs -text
