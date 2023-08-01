@@ -1,0 +1,4 @@
+donatello.kicad_pro filter=lfs diff=lfs merge=lfs -text
+donatello.kicad_pcb filter=lfs diff=lfs merge=lfs -text
+donatello.kicad_sch filter=lfs diff=lfs merge=lfs -text
+donatello.kicad_prl filter=lfs diff=lfs merge=lfs -text
