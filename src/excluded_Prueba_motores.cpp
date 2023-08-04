@@ -1,4 +1,4 @@
-
+#include <Arduino.h> 
 // L9110 motor driver controlando 2 motores CC
  
 const int AIA = A0;  // (pwm) pin 6 conectado a pin A-IA 

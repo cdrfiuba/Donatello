@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "McQueen",
+			"path": ".."
+		},
+		{
+			"name": "test",
+			"path": "../../../OneDrive/Documentos/PlatformIO/Projects/test"
+		}
+	],
+	"settings": {}
+}
