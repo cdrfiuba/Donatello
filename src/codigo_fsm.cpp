@@ -14,15 +14,17 @@
 #define PIN_SENSOR_IZQUIERDO    9
 #define PIN_SENSOR_CENTRO       10
 #define PIN_SENSOR_DERECHO      11
+#define PIN_SENSOR_IZQUIERDOO   8
+#define PIN_SENSOR_DERECHOO     12
 #define PIN_SENSORS_MASK        0b00001110
 #define PIN_SENSORS_SHIFT       1
 
-#define READ_SENSORS()  ((PINB & PIN_SENSORS_MASK) >> PIN_SENSORS_SHIFT)
+//#define READ_SENSORS()  ((PINB & PIN_SENSORS_MASK) >> PIN_SENSORS_SHIFT)
 
 // Casos que no tenemos contemplados, mejor ignorar
 #define UNDEFINED   125
 
-#define BOTON_ENCENDIDO 7
+#define BOTON_ENCENDIDO 6
 
 constexpr float sensors_to_error[] = {
     UNDEFINED,  // ---
@@ -38,9 +40,9 @@ constexpr float sensors_to_error[] = {
 Servo servomotor1;
 Servo servomotor2;
 
-constexpr uint8_t kVelMaxIzq = 150;
+constexpr uint8_t kVelMaxIzq = 40;
 constexpr uint8_t kVelMaxDer = 180;
-constexpr float kP = 28; //it was 28
+constexpr float kP = 14; //it was 28
 constexpr float kD = 0;
 
 struct ProgramData {
@@ -49,14 +51,42 @@ struct ProgramData {
     float dt;
     float error_p;
     float error_d;
-    uint8_t velDer = kVelMaxDer;
-    uint8_t velIzq = kVelMaxIzq;
+    int16_t velDer = kVelMaxDer;
+    int16_t velIzq = kVelMaxIzq;
 };
 ProgramData s{};
 
+int Read_Sensors(){
+    int centroo = digitalRead(PIN_SENSOR_CENTRO);
+    int izquierdo = digitalRead(PIN_SENSOR_IZQUIERDO);
+    int derecho = digitalRead(PIN_SENSOR_DERECHO);
+    //int derechoo = digitalRead(PIN_SENSOR_DERECHOO);
+    //int izquierdoo = digitalRead(PIN_SENSOR_IZQUIERDOO);
+
+    if(centroo==1){
+        return 0;
+    }/*
+    else if(centroo==1 && izquierdo==1){
+        return -0.4;
+    }
+     else if(centroo==1 && derecho==1){
+        return 0.4;
+    }*/
+    else if(derecho==1 && izquierdo ==0){
+        return 1;
+    }
+    else if(izquierdo==1 && derecho ==0){
+        return -1;
+    }/*
+    else if(izquierdoo==1){
+        return -2;
+    }else if(derechoo==1){
+        return 2;
+    }*/
+}
 
 void follow_line_p() {
-    int16_t error = sensors_to_error[READ_SENSORS()];;
+    int error = Read_Sensors();
     // Better safe than sorry
     if (error == UNDEFINED) {
         return;
@@ -72,33 +102,42 @@ void follow_line_d() {
 void setup() {
     // Puente H
 
-
+    Serial.begin(9600);
     pinMode(PIN_SENSOR_IZQUIERDO, INPUT);
     pinMode(PIN_SENSOR_CENTRO, INPUT);
     pinMode(PIN_SENSOR_DERECHO, INPUT);
-    pinMode(A7, OUTPUT);
+    pinMode(PIN_SENSOR_DERECHOO, INPUT);
+    pinMode(PIN_SENSOR_IZQUIERDOO, INPUT);
+    pinMode(A3, OUTPUT);
     pinMode(A5, OUTPUT);
 
-    servomotor1.attach(A7);
-    servomotor2.attach(A5);
+    servomotor1.attach(A5);
+    servomotor2.attach(A3);
 
     pinMode(BOTON_ENCENDIDO, INPUT);
 
-    //while(!digitalRead(BOTON_ENCENDIDO));
+    servomotor1.write(95);
+    servomotor2.write(92);
+
+    while(digitalRead(BOTON_ENCENDIDO));
+
     s.t0 = millis();
 }
  
 void loop() {
-    /*follow_line_p();
+    follow_line_p();
     if (100 < (s.dt = millis() - s.t0)) {
         s.t0 = millis(); 
         follow_line_d();
-    }*/
-    //s.velDer = min(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 90);
-    //s.velIzq = min(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 90);
+    }
+    s.velDer = min(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 150);
+    s.velIzq = min(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 40);
+    //s.velIzq = max(s.velIzq, 10);
 
+    Serial.println(s.error_p*kP+ kVelMaxDer);
+    Serial.println(kVelMaxIzq - s.error_p * kP);
 
-    servomotor1.write(180);
-    delay(1000);
+    servomotor1.write(s.velIzq);
+    servomotor2.write(s.velDer);
     
 }
