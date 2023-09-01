@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "donatello")(type "KiCad")(uri "${KIPRJMOD}/donatello.pretty")(options "")(descr ""))
+)
