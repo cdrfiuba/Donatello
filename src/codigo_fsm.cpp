@@ -126,22 +126,19 @@ void setup() {
 }
  
 void loop() {
-    /*follow_line_p();
+    follow_line_p();
     if (100 < (s.dt = millis() - s.t0)) {
         s.t0 = millis(); 
         follow_line_d();
     }
     s.velDer = min(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 150);
     s.velIzq = min(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 40);
-    //s.velIzq = max(s.velIzq, 10);
 
     Serial.println(s.error_p*kP+ kVelMaxDer);
     Serial.println(kVelMaxIzq - s.error_p * kP);
 
     servomotor1.write(s.velIzq);
-    servomotor2.write(s.velDer);*/
+    servomotor2.write(s.velDer);
 
-    analogWrite(3, 200);
-    delay(3000);
 
 }
