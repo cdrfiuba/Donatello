@@ -110,6 +110,7 @@ void setup() {
     pinMode(PIN_SENSOR_IZQUIERDOO, INPUT);
     pinMode(A3, OUTPUT);
     pinMode(A5, OUTPUT);
+    pinMode(3, OUTPUT);
 
     servomotor1.attach(A5);
     servomotor2.attach(A3);
@@ -125,7 +126,7 @@ void setup() {
 }
  
 void loop() {
-    follow_line_p();
+    /*follow_line_p();
     if (100 < (s.dt = millis() - s.t0)) {
         s.t0 = millis(); 
         follow_line_d();
@@ -138,6 +139,9 @@ void loop() {
     Serial.println(kVelMaxIzq - s.error_p * kP);
 
     servomotor1.write(s.velIzq);
-    servomotor2.write(s.velDer);
-    
+    servomotor2.write(s.velDer);*/
+
+    analogWrite(3, 200);
+    delay(3000);
+
 }
