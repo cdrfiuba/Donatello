@@ -11,9 +11,11 @@
 #define BIB A3
 
 // Infrarrojos
+#define PIN_SENSOR_IZQUIERDOO   8
 #define PIN_SENSOR_IZQUIERDO    9
 #define PIN_SENSOR_CENTRO       10
 #define PIN_SENSOR_DERECHO      11
+#define PIN_SENSOR_DERECHOO     12
 #define PIN_SENSORS_MASK        0b00001110
 #define PIN_SENSORS_SHIFT       1
 
@@ -71,7 +73,10 @@ void follow_line_d() {
 
 void setup() {
     // Puente H
-
+    pinMode(AIA, OUTPUT);
+    pinMode(AIB, OUTPUT);
+    pinMode(BIA, OUTPUT);
+    pinMode(BIB, OUTPUT);
 
     pinMode(PIN_SENSOR_IZQUIERDO, INPUT);
     pinMode(PIN_SENSOR_CENTRO, INPUT);
@@ -89,16 +94,24 @@ void setup() {
 }
  
 void loop() {
-    /*follow_line_p();
+    /*
+    follow_line_p();
     if (100 < (s.dt = millis() - s.t0)) {
         s.t0 = millis(); 
         follow_line_d();
-    }*/
+    }
     //s.velDer = min(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 90);
     //s.velIzq = min(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 90);
 
-
     servomotor1.write(180);
+
+    servomotor2.write(180);
     delay(1000);
-    
+    */
+    analogWrite(AIA, 0);
+    analogWrite(AIB, 400);
+    analogWrite(BIA, 0);
+    analogWrite(BIB, 200);
+
+
 }
