@@ -18,6 +18,7 @@ void setup(){
 }
 
 void loop(){
+	
 	for(int i=0; i<=260; i+=10){
 		analogWrite(AIA, 0);
 		analogWrite(AIB, i);
@@ -25,4 +26,5 @@ void loop(){
 		analogWrite(BIB, 0);
 		delay(3000);
 		}
+
 }
