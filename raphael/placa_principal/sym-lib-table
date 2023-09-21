@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "mt3608module")(type "KiCad")(uri "${KIPRJMOD}/mt3608module.kicad_sym")(options "")(descr ""))
+  (lib (name "donatello")(type "KiCad")(uri "${KIPRJMOD}/donatello.kicad_sym")(options "")(descr ""))
+)
