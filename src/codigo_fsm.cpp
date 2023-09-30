@@ -11,11 +11,11 @@
 #define BIB A3
 
 // Infrarrojos
-#define PIN_SENSOR_IZQUIERDO    9
-#define PIN_SENSOR_CENTRO       10
-#define PIN_SENSOR_DERECHO      11
 #define PIN_SENSOR_IZQUIERDOO   8
-#define PIN_SENSOR_DERECHOO     12
+#define PIN_SENSOR_IZQUIERDO    7
+#define PIN_SENSOR_CENTRO       6
+#define PIN_SENSOR_DERECHO      5
+#define PIN_SENSOR_DERECHOO     4
 #define PIN_SENSORS_MASK        0b00001110
 #define PIN_SENSORS_SHIFT       1
 
@@ -24,7 +24,7 @@
 // Casos que no tenemos contemplados, mejor ignorar
 #define UNDEFINED   125
 
-#define BOTON_ENCENDIDO 6
+#define BOTON_ENCENDIDO 2
 
 constexpr float sensors_to_error[] = {
     UNDEFINED,  // ---
@@ -37,13 +37,10 @@ constexpr float sensors_to_error[] = {
     UNDEFINED   // ***
 };
 
-Servo servomotor1;
-Servo servomotor2;
-
-constexpr uint8_t kVelMaxIzq = 40;
-constexpr uint8_t kVelMaxDer = 180;
-constexpr float kP = 14; //it was 28
-constexpr float kD = 0;
+constexpr uint8_t kVelMaxIzq = 155;
+constexpr uint8_t kVelMaxDer = 155;
+constexpr float kP = 130; //it was 28
+constexpr float kD = 60;
 
 struct ProgramData {
     int16_t last_error =  0;
@@ -56,37 +53,46 @@ struct ProgramData {
 };
 ProgramData s{};
 
-int Read_Sensors(){
+float Read_Sensors(){
     int centroo = digitalRead(PIN_SENSOR_CENTRO);
     int izquierdo = digitalRead(PIN_SENSOR_IZQUIERDO);
     int derecho = digitalRead(PIN_SENSOR_DERECHO);
-    //int derechoo = digitalRead(PIN_SENSOR_DERECHOO);
-    //int izquierdoo = digitalRead(PIN_SENSOR_IZQUIERDOO);
+    int derechoo = digitalRead(PIN_SENSOR_DERECHOO);
+    int izquierdoo = digitalRead(PIN_SENSOR_IZQUIERDOO);
 
     if(centroo==1){
         return 0;
-    }/*
+    }
     else if(centroo==1 && izquierdo==1){
-        return -0.4;
+        return -0.5;
     }
      else if(centroo==1 && derecho==1){
-        return 0.4;
-    }*/
-    else if(derecho==1 && izquierdo ==0){
+        return 0.5;
+    }
+    else if(derecho==1){
         return 1;
     }
-    else if(izquierdo==1 && derecho ==0){
+    else if(izquierdo==1){
         return -1;
-    }/*
+    }
+    else if(izquierdoo==1 && izquierdo ==1){
+        return -1.5;
+    }
+    else if(derecho==1 && derechoo ==1){
+        return 1.5;
+    }
     else if(izquierdoo==1){
         return -2;
     }else if(derechoo==1){
         return 2;
-    }*/
+    }
+    else{
+        return 4;
+    }
 }
 
 void follow_line_p() {
-    int error = Read_Sensors();
+    float error = Read_Sensors();
     // Better safe than sorry
     if (error == UNDEFINED) {
         return;
@@ -96,31 +102,23 @@ void follow_line_p() {
 
 void follow_line_d() {
     s.error_d = (s.error_p - s.last_error) / s.dt;
-    s.last_error = s.last_error;
+    s.last_error = s.error_d;
 }
 
 void setup() {
     // Puente H
 
-    Serial.begin(9600);
+   // Serial.begin(9600);
     pinMode(PIN_SENSOR_IZQUIERDO, INPUT);
     pinMode(PIN_SENSOR_CENTRO, INPUT);
     pinMode(PIN_SENSOR_DERECHO, INPUT);
     pinMode(PIN_SENSOR_DERECHOO, INPUT);
     pinMode(PIN_SENSOR_IZQUIERDOO, INPUT);
-    pinMode(A3, OUTPUT);
-    pinMode(A5, OUTPUT);
-    pinMode(3, OUTPUT);
-
-    servomotor1.attach(A5);
-    servomotor2.attach(A3);
+    pinMode(9, OUTPUT);
+    pinMode(10, OUTPUT);
 
     pinMode(BOTON_ENCENDIDO, INPUT);
-
-    servomotor1.write(95);
-    servomotor2.write(92);
-
-    while(digitalRead(BOTON_ENCENDIDO));
+    while (!digitalRead(BOTON_ENCENDIDO));
 
     s.t0 = millis();
 }
@@ -131,14 +129,25 @@ void loop() {
         s.t0 = millis(); 
         follow_line_d();
     }
-    s.velDer = min(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 150);
-    s.velIzq = min(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 40);
 
-    Serial.println(s.error_p*kP+ kVelMaxDer);
-    Serial.println(kVelMaxIzq - s.error_p * kP);
+    s.velDer = min(max(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 0), 230);
+    s.velIzq = min(max(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 0), 230);
 
-    servomotor1.write(s.velIzq);
-    servomotor2.write(s.velDer);
-
+    //s.velDer = min(s.velDer, 235);
+    //s.velIzq = min(s.velIzq, 235);
+/*
+    if(s.error_p > 0){
+        s.velDer = max(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 0);
+        s.velIzq = max(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 0);
+    } else if (s.error_p < 0) {
+        s.velDer = max(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 0);
+        s.velIzq = max(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 0);
+    }else{
+        s.velDer = kVelMaxDer;
+        s.velIzq = kVelMaxIzq;
+    }
+*/
+	analogWrite(10, s.velDer);
+	analogWrite(9, s.velIzq);	
 
 }
