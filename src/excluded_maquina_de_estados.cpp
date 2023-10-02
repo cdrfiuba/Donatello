@@ -1,116 +1,256 @@
 #include <Arduino.h>
 
-#define PIN_BTN    2
+#define PIN_BTN    9
+#define PIN_MOTOR_LEFT 3
+#define PIN_MOTOR_RIGHT 5
+
+#define PIN_SENSOR_IZQUIERDOO   8
+#define PIN_SENSOR_IZQUIERDO    7
+#define PIN_SENSOR_CENTRO       6
+#define PIN_SENSOR_DERECHO      5
+#define PIN_SENSOR_DERECHOO     4
+#define PIN_SENSORS_SHIFT       1
+
 
 typedef enum {
-  STATE_INIT_A,
-  STATE_A,
-  STATE_ELAPSED_A,
-  STATE_INIT_B,
-  STATE_B,
-  STATE_ELAPSED_B
+  WAITING_BUTTON,
+  STATE_CENTER,
+  STATE_CENTER_LEFT,
+  STATE_LEFT,
+  STATE_CENTER_RIGHT,
+  STATE_RIGHT,
+  STATE_ZERO
 } state_t;
 
-const int sensorPin = 9;
-const int AIA = 10; //pines motores
-const int AIB =11;
 
-byte speed=255;
+byte speed=150;
+
+typedef enum{
+  ZERO,
+  DELTA_PLUS_PLUS,
+  DELTA_PLUS,
+  DELTA,
+  DELTA_MINUS,
+  DELTA_MINUS_MINUS
+}delta_t;
+
+signed char deltas[6][2] ={
+  {0, 0}, // ZERO - avanza derecho
+  {50, -50}, // DELTA_PLUS_PLUS - giro fuerte a la derecha
+  {0, -50}, // DELTA_PLUS - giro suave a la derecha 
+  {0 , -25}, // DELTA - giro mas suave a la derecha
+  {25 , 0}, // DELTA_MINUS - corrijo inercia a la derecha
+  {15 , 0} // DELTA_MINUS_MINUS - corrijo inercia mas suave a la derecha
+}; 
 
 void setup() {
   Serial.begin(9600);   //iniciar puerto serie
   pinMode(PIN_BTN, INPUT);  //definir pin como entrada
-  pinMode(sensorPin, INPUT);  //definir pin como entrada
-  pinMode(AIA, OUTPUT);  //definir pin como salida
-  pinMode(AIB, OUTPUT);  //definir pin como salida
+  pinMode(PIN_MOTOR_LEFT, OUTPUT);
+  pinMode(PIN_MOTOR_RIGHT, OUTPUT);
+  pinMode(PIN_SENSOR_IZQUIERDO, INPUT);
+  pinMode(PIN_SENSOR_CENTRO, INPUT);
+  pinMode(PIN_SENSOR_DERECHO, INPUT);
+  pinMode(PIN_SENSOR_DERECHOO, INPUT);
+  pinMode(PIN_SENSOR_IZQUIERDOO, INPUT);
+  state.program_state = WAITING_BUTTON;
 }
 
-void backward() {
- analogWrite(AIA, 0);
- analogWrite(AIB, speed);
-}
 
-void forward() {
- analogWrite(AIA, speed);
- analogWrite(AIB, 0);
-}
-
-void stop() {
-  analogWrite(AIA, 0);
-  analogWrite(AIB, 0);
+void forward(delta_t d, bool dir) {
+ analogWrite(PIN_MOTOR_LEFT, speed+deltas[d][!dir]);
+ analogWrite(PIN_MOTOR_RIGHT, speed+deltas[d][dir]);
 }
 
 struct State {
   bool button_pressed;
   state_t program_state;
+  state_t previous_state;
   long int dt;
 };
 State state;
 
 typedef void (procesar_state_t)();
 
+//lectura de sensores
+void read_sensors(){
+    int sensores[] = {
+      digitalRead(PIN_SENSOR_IZQUIERDOO),
+      digitalRead(PIN_SENSOR_IZQUIERDO),
+      digitalRead(PIN_SENSOR_CENTRO),
+      digitalRead(PIN_SENSOR_DERECHO),
+      digitalRead(PIN_SENSOR_DERECHOO)
+      };
+    
 
-void stateInitA() {
-  forward();
-  state.dt = 0;
-  state.program_state = STATE_A;
-}
-
-void stateA() {
-  long int start_time = micros();
-
-  if(state.dt > 2000000) {
-    stop();
-    state.program_state = STATE_ELAPSED_A;
-  }
-
-  state.dt += micros() - start_time;
-}
-
-void elapsedA() {
-  if(state.button_pressed){
-    state.program_state = STATE_INIT_B;
-  }
-}
-
-void stateInitB() {
-  backward();
-  state.dt = 0;
-  state.program_state = STATE_B;
-}
-
-void stateB() {
-  if(state.dt > 2000000) {
-    stop();
-    state.program_state = STATE_ELAPSED_B;
-  }
+    if(sensores[2]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_CENTER;
+    }
+    else if(sensores[2] && sensores[1]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_CENTER_LEFT;
+    }
+     else if(sensores[1]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_LEFT;
+    }
+    else if(sensores[2] && sensores[3]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_CENTER_RIGHT;
+    }
+     else if(sensores[3]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_RIGHT;
+    }
 
 }
 
-void elapsedB(){
-  if(state.button_pressed){
-    state.program_state = STATE_INIT_A;
+
+void waiting_button() {
+  if(digitalRead(PIN_BTN)){
+    state.program_state = state.previous_state = STATE_CENTER;
   }
 }
+
+void state_center(){
+  switch (state.previous_state)
+  {
+  case STATE_CENTER:
+    forward(ZERO,0);
+    break;
+  
+  case STATE_CENTER_RIGHT:
+    forward(DELTA_MINUS_MINUS, 1); //
+  break;
+
+  case STATE_RIGHT:
+    forward(DELTA_MINUS, 1); //
+  break;
+
+  case STATE_CENTER_LEFT:
+    forward(DELTA_MINUS_MINUS, 0); //
+  break;
+
+  case STATE_LEFT:
+    forward(DELTA_MINUS, 0); //
+  break;
+  }
+}
+
+void state_center_left(){
+  switch (state.previous_state)
+  {
+  case STATE_CENTER:
+    forward(DELTA, 1);
+  break;
+
+  case STATE_CENTER_LEFT:
+    forward(DELTA_MINUS_MINUS, 1); //
+  break;
+
+  case STATE_LEFT:
+    forward(DELTA_MINUS, 0); //
+  break;
+  }
+}
+
+
+
+void state_center_right(){
+  switch (state.previous_state)
+  {
+  case STATE_CENTER:
+    forward(DELTA, 0);
+  break;
+
+  case STATE_CENTER_RIGHT:
+    forward(DELTA_MINUS_MINUS, 0); //
+  break;
+
+  case STATE_RIGHT:
+    forward(DELTA_MINUS, 1); //
+  break;
+  }
+}
+
+void state_right(){
+  switch (state.previous_state)
+  {
+  case STATE_CENTER:
+    forward(DELTA_PLUS_PLUS,0);
+    break;
+  
+  case STATE_CENTER_RIGHT:
+    forward(DELTA_PLUS, 0); //
+  break;
+
+  case STATE_RIGHT:
+    forward(DELTA_MINUS, 0); //
+  break;
+
+  case STATE_ZERO:
+  break; //
+  }
+}
+
+void state_left(){
+  switch (state.previous_state)
+  {
+  case STATE_CENTER:
+    forward(DELTA_PLUS_PLUS,1);
+    break;
+  
+  case STATE_CENTER_RIGHT:
+    forward(DELTA_PLUS, 1); //
+  break;
+
+  case STATE_RIGHT:
+    forward(DELTA_MINUS, 1); //
+  break;
+
+  case STATE_ZERO:
+  break; //
+  }
+}
+
+void state_zero(){
+  switch (state.previous_state)
+  {
+  case STATE_RIGHT:
+  case STATE_CENTER_RIGHT:
+  forward(DELTA_PLUS_PLUS, 0);
+  break;
+
+  case STATE_LEFT:
+  case STATE_CENTER_LEFT:
+  forward(DELTA_PLUS_PLUS, 1);
+  break;
+
+  default:
+    break;
+  }
+}
+
 
 procesar_state_t* dispatch_table[] = {
-  stateInitA,
-  stateA,
-  elapsedA,
-  stateInitB,
-  stateB,
-  elapsedB
+  waiting_button,
+  state_center,
+  state_center_left,
+  state_left,
+  state_center_right,
+  state_right,
+  state_zero
 };
 
 
 void loop(){
-  long int start_time = micros();
 
-  state.button_pressed = digitalRead(PIN_BTN);
-
+  read_sensors();
   dispatch_table[state.program_state]();
 
-  state.dt += micros() - start_time;
+  //delay(10); 
+
 }
 
 
