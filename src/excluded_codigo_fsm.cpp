@@ -35,8 +35,8 @@ constexpr float sensors_to_error[] = {
     UNDEFINED   // ***
 };
 
-constexpr uint8_t kVelMaxIzq = 155;
-constexpr uint8_t kVelMaxDer = 155;
+constexpr uint8_t kVelMaxIzq = 100;
+constexpr uint8_t kVelMaxDer = 100;
 constexpr float kP = 130; //it was 28
 constexpr float kD = 60;
 
@@ -59,29 +59,47 @@ float Read_Sensors(){
     int izquierdoo = digitalRead(PIN_SENSOR_IZQUIERDOO);
 
     if(centroo==1){
+        s.velDer = 210;
+        s.velIzq = 210;
         return 0;
     }
     else if(centroo==1 && izquierdo==1){
+        s.velDer = 230;
+        s.velIzq = 170;
         return -0.5;
     }
      else if(centroo==1 && derecho==1){
+        s.velDer = 170;
+        s.velIzq = 230;
         return 0.5;
     }
     else if(derecho==1){
+         s.velDer = 90;
+        s.velIzq = 150;
         return 1;
     }
     else if(izquierdo==1){
+         s.velDer = 150;
+        s.velIzq = 90;
         return -1;
     }
     else if(izquierdoo==1 && izquierdo ==1){
+         s.velDer = 150;
+        s.velIzq = 40;
         return -1.5;
     }
     else if(derecho==1 && derechoo ==1){
+        s.velDer = 40;
+        s.velIzq = 150;
         return 1.5;
     }
     else if(izquierdoo==1){
+         s.velDer = 180;
+        s.velIzq = 20;
         return -2;
     }else if(derechoo==1){
+        s.velDer = 20;
+        s.velIzq = 180;
         return 2;
     }
     else{
@@ -123,14 +141,19 @@ void setup() {
  
 void loop() {
     follow_line_p();
-    if (100 < (s.dt = millis() - s.t0)) {
+    /*if (100 < (s.dt = millis() - s.t0)) {
         s.t0 = millis(); 
         follow_line_d();
     }
+    if(s.error_p==0){
+        s.velDer = 210;
+        s.velIzq = 210;
 
-    s.velDer = min(max(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 0), 230);
-    s.velIzq = min(max(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 0), 230);
-
+    }
+    else{
+        s.velDer = min(max(kVelMaxDer  + s.error_d * kD + s.error_p * kP, 0), 230);
+        s.velIzq = min(max(kVelMaxIzq  - s.error_d * kD - s.error_p * kP, 0), 230);
+    }
     //s.velDer = min(s.velDer, 235);
     //s.velIzq = min(s.velIzq, 235);
 /*
@@ -145,7 +168,7 @@ void loop() {
         s.velIzq = kVelMaxIzq;
     }
 */
-	analogWrite(10, s.velDer);
-	analogWrite(9, s.velIzq);	
+	analogWrite(9, s.velDer);
+	analogWrite(10, s.velIzq);	
 
 }

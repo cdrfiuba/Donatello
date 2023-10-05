@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-#define PIN_BTN    9
-#define PIN_MOTOR_LEFT 3
-#define PIN_MOTOR_RIGHT 5
+#define PIN_BTN    2
+#define PIN_MOTOR_LEFT 9
+#define PIN_MOTOR_RIGHT 10
 
 #define PIN_SENSOR_IZQUIERDOO   8
 #define PIN_SENSOR_IZQUIERDO    7
@@ -19,9 +19,21 @@ typedef enum {
   STATE_LEFT,
   STATE_CENTER_RIGHT,
   STATE_RIGHT,
-  STATE_ZERO
+  STATE_ZERO,
+  STATE_RIGHT_RIGHT,
+  STATE_LEFT_LEFT,
+  STATE_LEFTT,
+  STATE_RIGHTT
 } state_t;
 
+
+struct State {
+  bool button_pressed;
+  state_t program_state;
+  state_t previous_state;
+  long int dt;
+};
+State state;
 
 byte speed=150;
 
@@ -36,7 +48,7 @@ typedef enum{
 
 signed char deltas[6][2] ={
   {0, 0}, // ZERO - avanza derecho
-  {50, -50}, // DELTA_PLUS_PLUS - giro fuerte a la derecha
+  {100, -120}, // DELTA_PLUS_PLUS - giro fuerte a la derecha
   {0, -50}, // DELTA_PLUS - giro suave a la derecha 
   {0 , -25}, // DELTA - giro mas suave a la derecha
   {25 , 0}, // DELTA_MINUS - corrijo inercia a la derecha
@@ -62,13 +74,6 @@ void forward(delta_t d, bool dir) {
  analogWrite(PIN_MOTOR_RIGHT, speed+deltas[d][dir]);
 }
 
-struct State {
-  bool button_pressed;
-  state_t program_state;
-  state_t previous_state;
-  long int dt;
-};
-State state;
 
 typedef void (procesar_state_t)();
 
@@ -103,6 +108,22 @@ void read_sensors(){
       state.previous_state = state.program_state;
       state.program_state = STATE_RIGHT;
     }
+    else if(sensores[4] && sensores[3]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_RIGHT_RIGHT;
+    }
+    else if(sensores[4]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_RIGHTT;
+    }
+    else if(sensores[0] && sensores[1]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_LEFT_LEFT;
+    }
+    else if(sensores[0]){
+      state.previous_state = state.program_state;
+      state.program_state = STATE_LEFTT; 
+    }
 
 }
 
@@ -117,25 +138,41 @@ void state_center(){
   switch (state.previous_state)
   {
   case STATE_CENTER:
-    forward(ZERO,0);
+    analogWrite(PIN_MOTOR_RIGHT, 200);
+	  analogWrite(PIN_MOTOR_LEFT, 200);	
     break;
   
   case STATE_CENTER_RIGHT:
-    forward(DELTA_MINUS_MINUS, 1); //
+    analogWrite(PIN_MOTOR_RIGHT, 230);
+	  analogWrite(PIN_MOTOR_LEFT, 170);	
   break;
 
   case STATE_RIGHT:
-    forward(DELTA_MINUS, 1); //
+    analogWrite(PIN_MOTOR_RIGHT, 170);
+	  analogWrite(PIN_MOTOR_LEFT, 90);	
   break;
 
   case STATE_CENTER_LEFT:
-    forward(DELTA_MINUS_MINUS, 0); //
+    analogWrite(PIN_MOTOR_RIGHT, 170);
+	  analogWrite(PIN_MOTOR_LEFT, 230);	
   break;
 
   case STATE_LEFT:
-    forward(DELTA_MINUS, 0); //
+    analogWrite(PIN_MOTOR_RIGHT, 90);
+	  analogWrite(PIN_MOTOR_LEFT, 170);	
+  break;
+
+  case STATE_LEFT_LEFT:
+    analogWrite(PIN_MOTOR_RIGHT, 30);
+	  analogWrite(PIN_MOTOR_LEFT, 150);	
+  break;
+
+  case STATE_LEFTT:
+    analogWrite(PIN_MOTOR_RIGHT, 30);
+	  analogWrite(PIN_MOTOR_LEFT, 170);	
   break;
   }
+
 }
 
 void state_center_left(){
@@ -249,7 +286,7 @@ void loop(){
   read_sensors();
   dispatch_table[state.program_state]();
 
-  //delay(10); 
+  delay(10); 
 
 }
 
