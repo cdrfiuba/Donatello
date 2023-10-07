@@ -1,5 +1,4 @@
-//#include <Arduino.h>
-//vuelta afuera 54.66 s
+#include <Arduino.h>
 
 #define PIN_BTN 2
 #define PIN_MOTOR_LEFT 10
@@ -35,11 +34,8 @@ struct State {
 };
 State state;
 
-//Batera cargada en 8.30, 247 y 0
-
-
-byte speed = 180;
-byte speed2 = speed * 0;
+byte speed = 255;
+byte speed2 = speed * 0.2;
 
 typedef enum {
   ZERO,
@@ -60,11 +56,11 @@ signed int deltas[6][2] = {
 };
 
 
-/*
+
 void forward(delta_t delta, bool dir) {
   //analogWrite(PIN_MOTOR_RIGHT, constrain( speed - deltas[delta][!dir] ,0,255));
   //analogWrite(PIN_MOTOR_LEFT, constrain( speed - deltas[delta][dir]-2 ,0,255));
-}*/
+}
 
 
 typedef void(procesar_state_t)();

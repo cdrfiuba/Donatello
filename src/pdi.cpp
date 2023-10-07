@@ -61,12 +61,14 @@ float sensors_to_error[] = {
 
 };
 
-constexpr uint8_t kVelMaxIzq = 150;
-constexpr uint8_t kVelMaxDer = 150;
-constexpr float kP = 70; //it was 28
-constexpr float kD = 70;
+constexpr uint8_t kVelMaxIzq = 250;
+constexpr uint8_t kVelMaxDer = 250;
+constexpr float kP = 170; //it was 28
+constexpr float kD = 50;
 
-#define VEL_ADELANTE	200
+#define VEL_MIN 0
+#define VEL_ADELANTE	250
+#define VEL_MAX 250
 
 struct ProgramData {
     int16_t last_error =  0;
@@ -165,8 +167,8 @@ void loop() {
 		s.velIzq=VEL_ADELANTE;
 	}
 	else{
-	s.velDer = min(max(s.velDer + s.error_d * kD + s.error_p * kP, 0), 220);
-    s.velIzq = min(max(s.velIzq - s.error_d * kD - s.error_p * kP, 0), 220);
+	s.velDer = min(max(kVelMaxDer - s.error_d * kD - s.error_p * kP, 0), VEL_MAX);
+    s.velIzq = min(max(kVelMaxIzq+ s.error_d * kD + s.error_p * kP, 0), VEL_MAX);
 
 	}
 	
